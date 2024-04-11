@@ -10,7 +10,7 @@ def parse_command(arg):
         if (chars[0] == "/"):
             pattern = arg[1:-2]
         else:
-            line_num = int(chars[0])
+            line_num = int(arg[0:-1])
         return "quit", line_num, pattern.strip()
     pass
 
@@ -29,7 +29,7 @@ for arg in sys.argv[1:]:
                         break
                 elif (pattern != ""):
                     print(line, end="")
-                    if (re.match(pattern, line)):
+                    if (re.search(pattern, line)):
                         break
 
 
