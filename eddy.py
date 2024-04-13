@@ -1,6 +1,14 @@
 import sys
 import re
 
+SUBSTITUTION_PATTERN = r'\A(/[^/]*/){0,1}\d*s\S(\[*[^\]/]*\]*)\S[\w\-/]*\Sg{0,1}'
+QUIT_PATTERN = r'.*q\Z'
+PRINT_PATTERN = r'.*p\Z'
+DELETE_PATTERN = r'.*d\Z'
+NUM_ADDR_PATTERN = r'\A\d+\Z'
+REGEX_ADDR_PATTERN = r'\A\S+\Z'
+
+
 def get_commands():
     n = False
     command = ""
@@ -16,36 +24,30 @@ def get_subst_patterns(arg):
     strs = arg.split("/")
     return strs
 
-def parse_command(arg):
-    chars = list(arg)
+def get_addresses(arg, char):
     line_num = -1
-    pattern = ""
-    if (chars[len(chars) - 1] == 'q'):
-        if (chars[0] == "/"):
-            pattern = arg[1:-2]
-        else:
-            line_num = int(arg[0:-1])
-        return "quit", line_num, pattern.strip()
-    elif (chars[len(chars) - 1] == 'p'):
-        if (chars[0] == "/"):
-            pattern = arg[1:-2]
-        else:
-            if (len(chars) == 1):
-                line_num = 0
-            else:
-                line_num = int(arg[0:-1])
-        return "print", line_num, pattern.strip()
-    elif (chars[len(chars) - 1] == 'd'):
-        if (chars[0] == "/"):
-            pattern = arg[1:-2]
-        else:
-            if (len(chars) == 1):
-                line_num = 0
-            else:
-                line_num = int(arg[0:-1])
-        return "delete", line_num, pattern.strip()
-    else:
+    regex_addr = ""
+    address = arg.split(char)
+    if (re.match(NUM_ADDR_PATTERN, address[0])):
+            line_num = int(address[0])
+    elif (re.match(REGEX_ADDR_PATTERN, address[0])):
+        regex_addr = address[0].replace('/', '')
+    return line_num, regex_addr
+
+def parse_command(arg):
+    if (re.match(QUIT_PATTERN, arg)):
+        line_num, regex_addr = get_addresses(arg, 'q')
+        return "quit", line_num, regex_addr
+    elif (re.match(PRINT_PATTERN, arg)):
+        line_num, regex_addr = get_addresses(arg, 'p')
+        return "print", line_num, regex_addr
+    elif (re.match(DELETE_PATTERN, arg)):
+        line_num, regex_addr = get_addresses(arg, 'd')
+        return "delete", line_num, regex_addr
+    elif (re.match(SUBSTITUTION_PATTERN, arg)):
         return "subst", -1, ""
+
+
 
 def quit(line_num, pattern):
     for count, line in enumerate(sys.stdin):
@@ -61,14 +63,16 @@ def quit(line_num, pattern):
 
 def print_ln(line_num, pattern):
     for count, line in enumerate(sys.stdin):
-        print(line, end="")
-        if (line_num == 0):
-            print(line, end="")
-        elif (count == line_num - 1):
+        if (count == line_num - 1):
             print(line, end="")
         elif (pattern != ""):
             if (re.search(pattern, line)):
                 print(line, end="")
+        elif (line_num == -1):
+           print(line, end="")
+        
+        print(line, end="")
+
 
 def print_n(line_num, pattern):
     for count, line in enumerate(sys.stdin):
@@ -80,13 +84,13 @@ def print_n(line_num, pattern):
 
 def delete(line_num, pattern):
     for count, line in enumerate(sys.stdin):
-        if (line_num == 0):
-            break
         if (count == line_num - 1):
             continue
         elif (pattern != ""):
             if (re.search(pattern, line)):
                 continue
+        elif (line_num == -1):
+            break
         print(line, end="")
 
 def substitute(re_addr, line_num, old, new, is_g):
