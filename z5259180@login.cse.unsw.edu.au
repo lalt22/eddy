@@ -126,11 +126,6 @@ def find_delimiter(string):
     if s_index != -1 and s_index < len(string) - 1:
         # Extract the character following 's'
         delimiter = string[s_index + 1]
-
-        #Consider cases of special chars
-        if (delimiter == '?'):
-            return r'\?'
-
         return delimiter
     else:
         return None
@@ -138,10 +133,7 @@ def find_delimiter(string):
 def get_subst_command_opts(arg):
     # print(arg)
     delimiter = find_delimiter(arg)
-    # print(delimiter)
-    
     trimmed_opts = re.split(delimiter, arg)
-    # trimmed_opts = re.split('?', arg)
     # print(*trimmed_opts)
     if (trimmed_opts[0] == ""):
         trimmed_opts = trimmed_opts[1:]
